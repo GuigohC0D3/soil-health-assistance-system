@@ -152,10 +152,10 @@ const criticalRecs = computed(() => propRecs.value.filter(r => r.prioridade === 
 
 function formatDate(d: string) { return new Date(d).toLocaleDateString('pt-BR') }
 function priorityLabel(p: string) { return { alta: 'Alta', media: 'Média', baixa: 'Baixa' }[p] ?? p }
-function phClass(v: number | null) { if (!v) return ''; return v < 5.5 ? 'val-low' : v > 7.5 ? 'val-warn' : 'val-ok' }
-function moClass(v: number | null) { if (!v) return ''; return v < 2.5 ? 'val-low' : 'val-ok' }
-function pClass(v: number | null) { if (!v) return ''; return v < 10 ? 'val-low' : 'val-ok' }
-function kClass(v: number | null) { if (!v) return ''; return v < 0.15 ? 'val-low' : 'val-ok' }
+function phClass(v: number | null) { if (v === null || v === undefined) return ''; return v < 5.5 ? 'val-low' : v > 7.5 ? 'val-warn' : 'val-ok' }
+function moClass(v: number | null) { if (v === null || v === undefined) return ''; return v < 2.5 ? 'val-low' : 'val-ok' }
+function pClass(v: number | null) { if (v === null || v === undefined) return ''; return v < 10 ? 'val-low' : 'val-ok' }
+function kClass(v: number | null) { if (v === null || v === undefined) return ''; return v < 0.15 ? 'val-low' : 'val-ok' }
 function print() { window.print() }
 
 watch(selectedPropId, async (id) => {
@@ -190,9 +190,4 @@ onMounted(async () => {
 .val-warn { color: var(--color-warning); font-weight: 600; }
 .val-ok { color: var(--color-success); }
 
-@media print {
-  .page-header button { display: none; }
-  aside { display: none; }
-  .main-content { padding: 0; }
-}
 </style>
