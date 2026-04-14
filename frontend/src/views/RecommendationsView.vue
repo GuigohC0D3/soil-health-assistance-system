@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import api from '@/services/api'
 import type { Recommendation, Property } from '@/types'
@@ -94,9 +94,8 @@ const filterPropId = ref<number | ''>('')
 const filterPriority = ref('')
 
 const filtered = computed(() => {
-  let r = recommendations.value
-  if (filterPriority.value) r = r.filter(x => x.prioridade === filterPriority.value)
-  return r
+  if (!filterPriority.value) return recommendations.value
+  return recommendations.value.filter(x => x.prioridade === filterPriority.value)
 })
 
 function countByPriority(p: string) {
@@ -113,18 +112,30 @@ function clearFilters() {
   filterPriority.value = ''
 }
 
-onMounted(async () => {
+async function fetchRecommendations() {
+  loading.value = true
+  error.value = ''
   try {
-    const [recsRes, propsRes] = await Promise.all([
-      api.get('/api/recommendations/'),
-      api.get('/api/properties/'),
-    ])
-    recommendations.value = recsRes.data
-    properties.value = propsRes.data
+    const params: Record<string, unknown> = {}
+    if (filterPropId.value) params.propriedade_id = filterPropId.value
+    const { data } = await api.get('/api/recommendations/', { params })
+    recommendations.value = data
   } catch {
     error.value = 'Erro ao carregar recomendações'
   } finally {
     loading.value = false
+  }
+}
+
+watch(filterPropId, fetchRecommendations)
+
+onMounted(async () => {
+  const [, propsRes] = await Promise.allSettled([
+    fetchRecommendations(),
+    api.get('/api/properties/'),
+  ])
+  if (propsRes.status === 'fulfilled') {
+    properties.value = propsRes.value.data
   }
 })
 </script>
