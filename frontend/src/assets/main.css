@@ -138,6 +138,13 @@ tbody tr:last-child td { border-bottom: none; }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
 }
 
+/* Print */
+@media print {
+  .sidebar { display: none !important; }
+  .main-content { padding: 0 !important; max-height: none !important; }
+  .page-header .btn { display: none !important; }
+}
+
 /* Empty state */
 .empty-state {
   text-align: center;

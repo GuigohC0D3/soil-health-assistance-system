@@ -120,8 +120,13 @@ const form = ref({
 })
 
 onMounted(async () => {
-  const { data } = await api.get('/api/properties/')
-  properties.value = data
+  try {
+    const { data } = await api.get('/api/properties/')
+    properties.value = data
+  } catch {
+    error.value = 'Erro ao carregar propriedades'
+    return
+  }
 
   const qPropId = route.query.propriedade_id
   if (qPropId) form.value.propriedade_id = Number(qPropId)

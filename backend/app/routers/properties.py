@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
@@ -23,10 +23,18 @@ def _get_property_or_404(prop_id: int, db: Session, user: User) -> Property:
 
 @router.get("/", response_model=List[PropertyResponse])
 def list_properties(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return db.query(Property).filter(Property.proprietario_id == current_user.id).all()
+    return (
+        db.query(Property)
+        .filter(Property.proprietario_id == current_user.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 @router.post("/", response_model=PropertyResponse, status_code=status.HTTP_201_CREATED)

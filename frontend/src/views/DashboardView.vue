@@ -94,17 +94,14 @@ function formatDate(d: string) {
 
 onMounted(async () => {
   try {
-    const [propsRes, analysesRes, recsRes] = await Promise.all([
-      api.get('/api/properties/'),
-      api.get('/api/analyses/'),
-      api.get('/api/recommendations/'),
+    const [statsRes, analysesRes, recsRes] = await Promise.all([
+      api.get('/api/dashboard/stats'),
+      api.get('/api/analyses/', { params: { limit: 5 } }),
+      api.get('/api/recommendations/', { params: { limit: 6 } }),
     ])
-    stats.value.properties = propsRes.data.length
-    stats.value.analyses = analysesRes.data.length
-    stats.value.recommendations = recsRes.data.length
-    stats.value.critical = recsRes.data.filter((r: Recommendation) => r.prioridade === 'alta').length
-    recentAnalyses.value = analysesRes.data.slice(0, 5)
-    recentRecs.value = recsRes.data.slice(0, 6)
+    stats.value = statsRes.data
+    recentAnalyses.value = analysesRes.data
+    recentRecs.value = recsRes.data
   } finally {
     loading.value = false
   }
