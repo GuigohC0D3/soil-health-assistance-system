@@ -18,6 +18,8 @@ router = APIRouter()
 def list_recommendations(
     propriedade_id: Optional[int] = Query(None),
     analise_id: Optional[int] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -31,4 +33,4 @@ def list_recommendations(
         query = query.filter(SoilAnalysis.propriedade_id == propriedade_id)
     if analise_id:
         query = query.filter(Recommendation.analise_id == analise_id)
-    return query.order_by(Recommendation.criado_em.desc()).all()
+    return query.order_by(Recommendation.criado_em.desc()).offset(skip).limit(limit).all()
