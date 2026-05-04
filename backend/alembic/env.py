@@ -1,18 +1,15 @@
 import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
-
-# Adiciona o diretório backend ao path
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from app.config import settings
-from app.database import Base
-
-# Importa todos os modelos para que o Alembic os reconheça
-import app.models  # noqa: F401
+from app.config import settings  # type: ignore[import-not-found]
+from app.database import Base  # type: ignore[import-not-found]
+import app.models  # type: ignore[import-not-found]  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

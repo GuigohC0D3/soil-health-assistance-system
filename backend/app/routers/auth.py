@@ -28,8 +28,8 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
-    if not user or not verify_password(payload.senha, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    if not user or not verify_password(payload.senha, str(user.hashed_password)):
+       raise HTTPException(status_code=401, detail="Credenciais inválidas")
     if not user.ativo:
         raise HTTPException(status_code=403, detail="Conta desativada")
     token = create_access_token(data={"sub": str(user.id)})
