@@ -1,7 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, users, properties, soil_analyses, recommendations, dashboard, notifications
+from app.routers import (
+    assistant,
+    auth,
+    users,
+    properties,
+    soil_analyses,
+    recommendations,
+    dashboard,
+    notifications,
+    simulator,
+)
 
 app = FastAPI(
     title="Sistema de Assistência à Saúde do Solo",
@@ -22,10 +32,18 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["Autenticação"])
 app.include_router(users.router, prefix="/api/users", tags=["Usuários"])
 app.include_router(properties.router, prefix="/api/properties", tags=["Propriedades"])
-app.include_router(soil_analyses.router, prefix="/api/analyses", tags=["Análises de Solo"])
-app.include_router(recommendations.router, prefix="/api/recommendations", tags=["Recomendações"])
+app.include_router(
+    soil_analyses.router, prefix="/api/analyses", tags=["Análises de Solo"]
+)
+app.include_router(
+    recommendations.router, prefix="/api/recommendations", tags=["Recomendações"]
+)
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
-app.include_router(notifications.router, prefix="/api/notifications", tags=["Notificações"])
+app.include_router(
+    notifications.router, prefix="/api/notifications", tags=["Notificações"]
+)
+app.include_router(assistant.router, prefix="/api/assistant", tags=["Assistente"])
+app.include_router(simulator.router, prefix="/api/simulate", tags=["Simulador"])
 
 
 @app.get("/api/health", tags=["Status"])
