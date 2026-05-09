@@ -5,13 +5,13 @@
         <h2 class="page-title">Relatórios</h2>
         <p class="page-subtitle">Visão consolidada por propriedade</p>
       </div>
-      <button class="btn btn-primary" @click="print">
+      <button class="btn btn-primary" @click="exportPDF" :disabled="!selectedPropId || exporting">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
-          <polyline points="6 9 6 2 18 2 18 9"/>
-          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-          <rect x="6" y="14" width="12" height="8"/>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
-        Imprimir
+        {{ exporting ? 'Gerando PDF...' : 'Exportar PDF' }}
       </button>
     </div>
 
@@ -77,9 +77,30 @@
             <div class="stat-value">{{ totalRecs }}</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Alertas Críticos</div>
-            <div class="stat-value" :style="{ color: criticalRecs > 0 ? 'var(--color-danger)' : 'var(--color-primary)' }">
-              {{ criticalRecs }}
+            <div class="stat-label">Score Atual</div>
+            <div class="stat-value" :style="{ color: latestScore !== null ? scoreColor(latestScore) : 'var(--color-primary)', fontSize: '28px' }">
+              {{ latestScore !== null ? latestScore : '—' }}
+            </div>
+            <div class="stat-hint" v-if="latestScore !== null">{{ scoreLabel(latestScore) }}</div>
+          </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid-2" style="margin-bottom: 20px;">
+          <div class="card">
+            <div class="card-header">Perfil de Adequação do Solo</div>
+            <div class="card-body" v-if="latestAnalysis">
+              <SoilRadarChart :analysis="latestAnalysis" />
+              <p class="chart-hint">Baseado na última análise: {{ formatDate(latestAnalysis.data_analise) }}</p>
+            </div>
+            <div class="card-body" v-else>
+              <p class="no-data">Nenhuma análise registrada para esta propriedade.</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">Evolução da Saúde do Solo</div>
+            <div class="card-body">
+              <HealthEvolutionChart :analyses="propAnalyses" />
             </div>
           </div>
         </div>
@@ -94,7 +115,7 @@
               <thead>
                 <tr>
                   <th>Amostra</th><th>Data</th><th>pH</th><th>M.O. (%)</th>
-                  <th>P (mg/dm³)</th><th>K (cmolc)</th><th>Ca (cmolc)</th><th>Mg (cmolc)</th>
+                  <th>P (mg/dm³)</th><th>K (cmolc)</th><th>Ca (cmolc)</th><th>Mg (cmolc)</th><th>Score</th>
                 </tr>
               </thead>
               <tbody>
@@ -107,6 +128,11 @@
                   <td :class="kClass(a.potassio)">{{ a.potassio ?? '—' }}</td>
                   <td>{{ a.calcio ?? '—' }}</td>
                   <td>{{ a.magnesio ?? '—' }}</td>
+                  <td>
+                    <span class="score-chip" :style="{ background: scoreColor(calcularScore(a)) + '20', color: scoreColor(calcularScore(a)) }">
+                      {{ calcularScore(a) }}
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -136,27 +162,62 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
+import SoilRadarChart from '@/components/SoilRadarChart.vue'
+import HealthEvolutionChart from '@/components/HealthEvolutionChart.vue'
 import api from '@/services/api'
 import type { Property, SoilAnalysis, Recommendation } from '@/types'
+import { calcularScore, scoreColor, scoreLabel } from '@/composables/soilMetrics'
 
 const properties = ref<Property[]>([])
 const selectedPropId = ref<number | ''>('')
 const propAnalyses = ref<SoilAnalysis[]>([])
 const propRecs = ref<Recommendation[]>([])
+const exporting = ref(false)
 
 const selectedProp = computed(() => properties.value.find(p => p.id === selectedPropId.value))
 const today = new Date().toLocaleDateString('pt-BR')
+const latestAnalysis = computed(() => propAnalyses.value.length ? propAnalyses.value[0] : null)
+const latestScore = computed(() => latestAnalysis.value ? calcularScore(latestAnalysis.value) : null)
 const lastAnalysisDate = computed(() => propAnalyses.value.length ? formatDate(propAnalyses.value[0].data_analise) : '—')
 const totalRecs = computed(() => propRecs.value.length)
-const criticalRecs = computed(() => propRecs.value.filter(r => r.prioridade === 'alta').length)
 
 function formatDate(d: string) { return new Date(d).toLocaleDateString('pt-BR') }
-function priorityLabel(p: string) { return { alta: 'Alta', media: 'Média', baixa: 'Baixa' }[p] ?? p }
+function priorityLabel(p: string) { return ({ alta: 'Alta', media: 'Média', baixa: 'Baixa' } as Record<string, string>)[p] ?? p }
 function phClass(v: number | null) { if (v === null || v === undefined) return ''; return v < 5.5 ? 'val-low' : v > 7.5 ? 'val-warn' : 'val-ok' }
 function moClass(v: number | null) { if (v === null || v === undefined) return ''; return v < 2.5 ? 'val-low' : 'val-ok' }
 function pClass(v: number | null) { if (v === null || v === undefined) return ''; return v < 10 ? 'val-low' : 'val-ok' }
 function kClass(v: number | null) { if (v === null || v === undefined) return ''; return v < 0.15 ? 'val-low' : 'val-ok' }
-function print() { window.print() }
+
+async function exportPDF() {
+  if (!selectedPropId.value) return
+  exporting.value = true
+  try {
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ])
+    const el = document.getElementById('report-area')!
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+    const imgData = canvas.toDataURL('image/png')
+    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' })
+    const pageW = pdf.internal.pageSize.getWidth()
+    const pageH = pdf.internal.pageSize.getHeight()
+    const imgH = (canvas.height * pageW) / canvas.width
+    let heightLeft = imgH
+    let position = 0
+    pdf.addImage(imgData, 'PNG', 0, position, pageW, imgH)
+    heightLeft -= pageH
+    while (heightLeft > 0) {
+      position -= pageH
+      pdf.addPage()
+      pdf.addImage(imgData, 'PNG', 0, position, pageW, imgH)
+      heightLeft -= pageH
+    }
+    pdf.save(`relatorio-${selectedProp.value?.nome ?? 'solo'}.pdf`)
+  } finally {
+    exporting.value = false
+  }
+}
 
 watch(selectedPropId, async (id) => {
   if (!id) { propAnalyses.value = []; propRecs.value = []; return }
@@ -190,4 +251,26 @@ onMounted(async () => {
 .val-warn { color: var(--color-warning); font-weight: 600; }
 .val-ok { color: var(--color-success); }
 
+.score-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.chart-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 10px;
+}
+.no-data {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+@media print {
+  .page-header .btn { display: none !important; }
+}
 </style>

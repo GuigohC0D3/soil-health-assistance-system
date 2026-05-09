@@ -49,6 +49,7 @@
               <th>M.O. (%)</th>
               <th>P (mg/dm³)</th>
               <th>K (cmolc)</th>
+              <th>Score</th>
               <th>Recs.</th>
               <th>Ações</th>
             </tr>
@@ -62,6 +63,14 @@
               <td>{{ a.materia_organica ?? '—' }}</td>
               <td>{{ a.fosforo ?? '—' }}</td>
               <td>{{ a.potassio ?? '—' }}</td>
+              <td>
+                <div class="score-cell">
+                  <span class="score-chip" :style="{ background: scoreColor(calcularScore(a)) + '20', color: scoreColor(calcularScore(a)) }">
+                    {{ calcularScore(a) }}
+                  </span>
+                  <span class="score-word" :style="{ color: scoreColor(calcularScore(a)) }">{{ scoreLabel(calcularScore(a)) }}</span>
+                </div>
+              </td>
               <td>
                 <span class="badge" :class="recBadgeClass(a.recomendacoes)">
                   {{ a.recomendacoes.length }}
@@ -100,6 +109,7 @@ import { useRoute } from 'vue-router'
 import AppLayout from '@/components/AppLayout.vue'
 import api from '@/services/api'
 import type { SoilAnalysis, Property, Recommendation } from '@/types'
+import { calcularScore, scoreColor, scoreLabel } from '@/composables/soilMetrics'
 
 const route = useRoute()
 const analyses = ref<SoilAnalysis[]>([])
@@ -172,4 +182,14 @@ onMounted(async () => {
 .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
 .modal p { font-size: 14px; color: var(--color-text-muted); margin-bottom: 20px; line-height: 1.6; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+.score-cell { display: flex; align-items: center; gap: 6px; }
+.score-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.score-word { font-size: 11px; font-weight: 500; }
 </style>
