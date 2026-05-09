@@ -84,3 +84,40 @@ export interface SoilAnalysisCreate {
   observacoes?: string | null
   propriedade_id: number
 }
+
+export interface AlertItem {
+  tipo: string
+  mensagem: string
+  prioridade: 'alta' | 'media'
+  propriedade_id: number
+  propriedade_nome: string
+  analise_id: number | null
+}
+
+export interface FertilizerPlan {
+  analysis_id: number
+  propriedade_nome: string
+  area_hectares: number
+  calagem: {
+    v1_pct: number
+    nc_t_ha: number
+    nc_total_t: number
+  }
+  fosfato: {
+    p2o5_kg_ha: number
+    superfosfato_simples_kg_ha: number
+    superfosfato_simples_total_kg: number
+    superfosfato_triplo_kg_ha: number
+    superfosfato_triplo_total_kg: number
+    categoria: string
+  }
+  potassio: {
+    k2o_kg_ha: number
+    kcl_kg_ha: number
+    kcl_total_kg: number
+    categoria: string
+  }
+  nitrogenio: {
+    dose_recomendada: string
+  }
+}

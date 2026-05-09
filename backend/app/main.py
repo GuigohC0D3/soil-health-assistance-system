@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, users, properties, soil_analyses, recommendations, dashboard
+from app.routers import auth, users, properties, soil_analyses, recommendations, dashboard, notifications
 
 app = FastAPI(
     title="Sistema de Assistência à Saúde do Solo",
@@ -25,6 +25,7 @@ app.include_router(properties.router, prefix="/api/properties", tags=["Proprieda
 app.include_router(soil_analyses.router, prefix="/api/analyses", tags=["Análises de Solo"])
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["Recomendações"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["Notificações"])
 
 
 @app.get("/api/health", tags=["Status"])

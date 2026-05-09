@@ -1,6 +1,5 @@
 <template>
   <div class="layout">
-    <!-- overlay para fechar o menu em mobile -->
     <div v-if="sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false" />
 
     <aside class="sidebar" :class="{ 'sidebar-open': sidebarOpen }">
@@ -42,6 +41,15 @@
           </svg>
           Recomendações
         </RouterLink>
+        <RouterLink to="/fertilizer" class="nav-item" active-class="active" @click="sidebarOpen = false">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+            <line x1="12" y1="12" x2="12" y2="17"/>
+            <line x1="9.5" y1="14.5" x2="14.5" y2="14.5"/>
+          </svg>
+          Calculadora
+        </RouterLink>
         <RouterLink to="/report" class="nav-item" active-class="active" @click="sidebarOpen = false">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -73,26 +81,78 @@
     </aside>
 
     <main class="main-content">
-      <button class="hamburger" @click="sidebarOpen = !sidebarOpen" aria-label="Abrir menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <line x1="3" y1="12" x2="21" y2="12"/>
-          <line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-      </button>
-      <slot />
+      <!-- Topbar fica fora do scroll para o dropdown não ser cortado -->
+      <div class="topbar">
+        <button class="hamburger" @click="sidebarOpen = !sidebarOpen" aria-label="Abrir menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+
+        <!-- Notification Bell -->
+        <div class="notif-area" v-click-outside="closeBell">
+          <button class="notif-bell" @click="bellOpen = !bellOpen" aria-label="Notificações">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span
+              v-if="notifications.totalCount > 0"
+              class="notif-badge"
+              :class="{ 'notif-badge--danger': notifications.criticalCount > 0 }"
+            >
+              {{ notifications.totalCount > 9 ? '9+' : notifications.totalCount }}
+            </span>
+          </button>
+
+          <div v-if="bellOpen" class="notif-dropdown">
+            <div class="notif-header">
+              <span>Alertas do Sistema</span>
+              <span class="notif-count">{{ notifications.totalCount }}</span>
+            </div>
+            <div v-if="notifications.alerts.length === 0" class="notif-empty">
+              Nenhum alerta ativo.
+            </div>
+            <div v-else class="notif-list">
+              <div
+                v-for="(alert, i) in notifications.alerts"
+                :key="i"
+                class="notif-item"
+                :class="{ 'notif-item--alta': alert.prioridade === 'alta' }"
+                @click="navigateAlert(alert)"
+              >
+                <span class="notif-dot" :class="alert.prioridade === 'alta' ? 'dot-alta' : 'dot-media'" />
+                <span class="notif-msg">{{ alert.mensagem }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Área scrollável separada da topbar -->
+      <div class="content-scroll">
+        <slot />
+      </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useNotificationsStore } from '@/stores/notifications'
+import type { AlertItem } from '@/types'
 
 const auth = useAuthStore()
+const notifications = useNotificationsStore()
 const router = useRouter()
 const sidebarOpen = ref(false)
+const bellOpen = ref(false)
+
+onMounted(() => { if (!notifications.loaded) notifications.fetchAlerts() })
 
 const userInitial = computed(() => auth.user?.nome?.[0]?.toUpperCase() ?? '?')
 const roleLabel = computed(() => {
@@ -100,8 +160,21 @@ const roleLabel = computed(() => {
   return map[auth.user?.papel ?? ''] ?? ''
 })
 
+function closeBell() { bellOpen.value = false }
+
+function navigateAlert(alert: AlertItem) {
+  notifications.dismiss(alert)
+  bellOpen.value = false
+  if (alert.analise_id) {
+    router.push(`/analyses?propriedade_id=${alert.propriedade_id}`)
+  } else {
+    router.push('/properties')
+  }
+}
+
 function handleLogout() {
   auth.logout()
+  notifications.clear()
   router.push('/login')
 }
 </script>
@@ -201,10 +274,27 @@ function handleLogout() {
 /* ─── Main content ─── */
 .main-content {
   flex: 1;
-  padding: 32px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   max-height: 100vh;
   min-width: 0;
+  /* sem overflow aqui para o dropdown não ser cortado */
+}
+
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 20px 32px 0;
+  position: relative;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 32px 32px;
 }
 
 .hamburger {
@@ -213,11 +303,102 @@ function handleLogout() {
   border: none;
   cursor: pointer;
   padding: 4px;
-  margin-bottom: 16px;
   color: var(--color-text-muted);
   border-radius: 6px;
 }
 .hamburger:hover { background: var(--color-surface-2); }
+
+/* ─── Notification Bell ─── */
+.notif-area { position: relative; }
+
+.notif-bell {
+  position: relative;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 7px 9px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  transition: background 0.12s, color 0.12s;
+}
+.notif-bell:hover { background: var(--color-surface-2); color: var(--color-text); }
+
+.notif-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 1px 5px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+.notif-badge--danger { background: #ef4444; }
+
+.notif-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 320px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 300;
+  overflow: hidden;
+}
+
+.notif-header {
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.notif-count {
+  background: var(--color-surface-2);
+  border-radius: 99px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.notif-empty { padding: 20px 16px; color: var(--color-text-muted); font-size: 13px; text-align: center; }
+
+.notif-list { max-height: 300px; overflow-y: auto; }
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.1s;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: var(--color-surface-2); }
+.notif-item--alta { border-left: 3px solid #ef4444; }
+
+.notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.dot-alta { background: #ef4444; }
+.dot-media { background: #f59e0b; }
+
+.notif-msg { font-size: 12.5px; line-height: 1.5; color: var(--color-text); flex: 1; min-width: 0; word-break: break-word; }
 
 .sidebar-overlay { display: none; }
 
@@ -243,12 +424,15 @@ function handleLogout() {
     z-index: 199;
   }
 
-  .main-content { padding: 16px; max-height: 100vh; }
+  .topbar { padding: 12px 16px 0; justify-content: space-between; }
+  .content-scroll { padding: 12px 16px 16px; }
 
   .hamburger {
     display: flex;
     align-items: center;
     justify-content: center;
   }
+
+  .notif-dropdown { width: 280px; right: -8px; }
 }
 </style>
