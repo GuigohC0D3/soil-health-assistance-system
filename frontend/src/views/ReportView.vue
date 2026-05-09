@@ -90,7 +90,10 @@
           <div class="card">
             <div class="card-header">Perfil de Adequação do Solo</div>
             <div class="card-body" v-if="latestAnalysis">
-              <SoilRadarChart :analysis="latestAnalysis" />
+              <div class="profile-row">
+                <SoilRadarChart :analysis="latestAnalysis" />
+                <SoilCoreViz :analyses="propAnalyses" />
+              </div>
               <p class="chart-hint">Baseado na última análise: {{ formatDate(latestAnalysis.data_analise) }}</p>
             </div>
             <div class="card-body" v-else>
@@ -164,6 +167,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import SoilRadarChart from '@/components/SoilRadarChart.vue'
 import HealthEvolutionChart from '@/components/HealthEvolutionChart.vue'
+import SoilCoreViz from '@/components/SoilCoreViz.vue'
 import api from '@/services/api'
 import type { Property, SoilAnalysis, Recommendation } from '@/types'
 import { calcularScore, scoreColor, scoreLabel } from '@/composables/soilMetrics'
@@ -259,6 +263,12 @@ onMounted(async () => {
   font-weight: 700;
 }
 
+.profile-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: center;
+}
 .chart-hint {
   text-align: center;
   font-size: 12px;
