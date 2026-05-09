@@ -30,3 +30,6 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
+CLAUDE.md
+backend/test.db
+backend/*.db
