@@ -15,10 +15,12 @@ class SoilAnalysis(Base):
     data_analise: Mapped[date]
     ph: Mapped[Optional[float]] = mapped_column(default=None)
     materia_organica: Mapped[Optional[float]] = mapped_column(default=None)  # %
-    fosforo: Mapped[Optional[float]] = mapped_column(default=None)           # mg/dm³
-    potassio: Mapped[Optional[float]] = mapped_column(default=None)          # cmolc/dm³
-    calcio: Mapped[Optional[float]] = mapped_column(default=None)            # cmolc/dm³
-    magnesio: Mapped[Optional[float]] = mapped_column(default=None)          # cmolc/dm³
+    fosforo: Mapped[Optional[float]] = mapped_column(default=None)  # mg/dm³
+    potassio: Mapped[Optional[float]] = mapped_column(default=None)  # cmolc/dm³
+    calcio: Mapped[Optional[float]] = mapped_column(default=None)  # cmolc/dm³
+    magnesio: Mapped[Optional[float]] = mapped_column(default=None)  # cmolc/dm³
+    teor_argila: Mapped[Optional[float]] = mapped_column(default=None)  # g/kg clay
+    cor_munsell: Mapped[Optional[str]] = mapped_column(String(20), default=None)
     observacoes: Mapped[Optional[str]] = mapped_column(Text, default=None)
     propriedade_id: Mapped[int] = mapped_column(ForeignKey("propriedades.id"))
     criado_em: Mapped[datetime] = mapped_column(default=datetime.utcnow)
@@ -26,7 +28,9 @@ class SoilAnalysis(Base):
         default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
-    propriedade: Mapped["Property"] = relationship("Property", back_populates="analises")  # type: ignore[name-defined]
+    propriedade: Mapped["Property"] = relationship(
+        "Property", back_populates="analises"
+    )  # type: ignore[name-defined]
     recomendacoes: Mapped[list["Recommendation"]] = relationship(  # type: ignore[name-defined]
         "Recommendation", back_populates="analise", cascade="all, delete-orphan"
     )

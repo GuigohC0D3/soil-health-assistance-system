@@ -40,6 +40,8 @@ export interface SoilAnalysis {
   potassio: number | null
   calcio: number | null
   magnesio: number | null
+  teor_argila: number | null
+  cor_munsell: string | null
   observacoes: string | null
   propriedade_id: number
   criado_em: string
@@ -81,6 +83,8 @@ export interface SoilAnalysisCreate {
   potassio?: number | null
   calcio?: number | null
   magnesio?: number | null
+  teor_argila?: number | null
+  cor_munsell?: string | null
   observacoes?: string | null
   propriedade_id: number
 }
@@ -92,6 +96,20 @@ export interface AlertItem {
   propriedade_id: number
   propriedade_nome: string
   analise_id: number | null
+}
+
+export interface LimingSimulation {
+  antes: {
+    v_pct: number
+    ph_estimado: number
+    necessidade_calagem: number | null
+    score_saude: number
+  }
+  depois: {
+    v_pct_simulado: number
+    ph_simulado: number
+  }
+  narrativa: string
 }
 
 export interface FertilizerPlan {

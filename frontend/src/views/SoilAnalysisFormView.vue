@@ -68,6 +68,11 @@
               <input v-model.number="form.magnesio" type="number" step="0.01" min="0" class="form-control" placeholder="Ex: 1.2" />
               <small class="field-hint">Ideal: &gt; 0.5</small>
             </div>
+            <div class="form-group">
+              <label class="form-label">Cor Munsell (ex: 10YR3/2)</label>
+              <input v-model="form.cor_munsell" type="text" class="form-control" placeholder="Ex: 10YR3/2" />
+              <small class="field-hint">Valores comuns no Cerrado: 10YR 3/2 (escuro), 10YR 5/4 (médio), 10YR 6/4 (claro)</small>
+            </div>
           </div>
 
           <div class="form-group">
@@ -116,6 +121,7 @@ const form = ref({
   potassio: null as number | null,
   calcio: null as number | null,
   magnesio: null as number | null,
+  cor_munsell: '',
   observacoes: '',
 })
 
@@ -144,6 +150,7 @@ onMounted(async () => {
         potassio: analysis.potassio,
         calcio: analysis.calcio,
         magnesio: analysis.magnesio,
+        cor_munsell: analysis.cor_munsell ?? '',
         observacoes: analysis.observacoes ?? '',
       }
     } catch {

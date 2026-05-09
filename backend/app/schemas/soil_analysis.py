@@ -15,6 +15,8 @@ class SoilAnalysisCreate(BaseModel):
     potassio: Optional[float] = None
     calcio: Optional[float] = None
     magnesio: Optional[float] = None
+    teor_argila: Optional[float] = None
+    cor_munsell: Optional[str] = None
     observacoes: Optional[str] = None
     propriedade_id: int
 
@@ -28,6 +30,8 @@ class SoilAnalysisUpdate(BaseModel):
     potassio: Optional[float] = None
     calcio: Optional[float] = None
     magnesio: Optional[float] = None
+    teor_argila: Optional[float] = None
+    cor_munsell: Optional[str] = None
     observacoes: Optional[str] = None
 
 
@@ -41,6 +45,8 @@ class SoilAnalysisResponse(BaseModel):
     potassio: Optional[float]
     calcio: Optional[float]
     magnesio: Optional[float]
+    teor_argila: Optional[float]
+    cor_munsell: Optional[str]
     observacoes: Optional[str]
     propriedade_id: int
     criado_em: datetime

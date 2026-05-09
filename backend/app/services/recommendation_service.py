@@ -10,26 +10,42 @@ from app.models.soil_analysis import SoilAnalysis
 
 # Faixas de referência para solos agrícolas brasileiros (Cerrado/Embrapa)
 _PH_MIN, _PH_MAX, _PH_OTM = 5.5, 6.5, 6.0
-_MO_MIN, _MO_OTM = 2.5, 3.5          # %
-_P_MIN, _P_OTM = 10.0, 15.0          # mg/dm³
-_K_MIN, _K_OTM = 0.15, 0.20          # cmolc/dm³
-_CA_MIN, _CA_OTM = 2.0, 4.0          # cmolc/dm³
-_MG_MIN, _MG_OTM = 0.5, 1.0          # cmolc/dm³
-_V_ALVO = 65.0                        # % saturação de bases ideal
+_MO_MIN, _MO_OTM = 2.5, 3.5  # %
+_P_THRESHOLDS = {
+    "arenosa": {"min": 10.0, "otimo": 20.0},
+    "media": {"min": 7.0, "otimo": 15.0},
+    "argilosa": {"min": 4.0, "otimo": 8.0},
+}
+
+
+def _get_p_thresholds(teor_argila: Optional[float]) -> dict:
+    if teor_argila is None or teor_argila < 150:
+        return _P_THRESHOLDS["arenosa"]
+    if teor_argila <= 350:
+        return _P_THRESHOLDS["media"]
+    return _P_THRESHOLDS["argilosa"]
+
+
+_K_MIN, _K_OTM = 0.15, 0.20  # cmolc/dm³
+_CA_MIN, _CA_OTM = 2.0, 4.0  # cmolc/dm³
+_MG_MIN, _MG_OTM = 0.5, 1.0  # cmolc/dm³
+_V_ALVO = 65.0  # % saturação de bases ideal
 
 
 @dataclass
 class SoilMetrics:
-    soma_bases: Optional[float] = None        # SB = Ca + Mg + K (cmolc/dm³)
-    h_al_estimado: Optional[float] = None     # acidez potencial estimada
-    ctc: Optional[float] = None               # CTC = SB + H+Al (cmolc/dm³)
-    saturacao_bases: Optional[float] = None   # V% = SB/CTC × 100
+    soma_bases: Optional[float] = None  # SB = Ca + Mg + K (cmolc/dm³)
+    h_al_estimado: Optional[float] = None  # acidez potencial estimada
+    ctc: Optional[float] = None  # CTC = SB + H+Al (cmolc/dm³)
+    saturacao_bases: Optional[float] = None  # V% = SB/CTC × 100
     necessidade_calagem: Optional[float] = None  # NC em t/ha (PRNT 80%)
-    score_saude: float = 0.0                  # 0–100
+    score_saude: float = 0.0  # 0–100
     desvios: dict = field(default_factory=dict)  # {parametro: valor normalizado}
 
 
-def _desvio_normalizado(atual: float, minimo: float, otimo: float, maximo: Optional[float] = None) -> float:
+def _desvio_normalizado(
+    atual: float, minimo: float, otimo: float, maximo: Optional[float] = None
+) -> float:
     """Retorna desvio normalizado: >0 = déficit, <0 = excesso, 0 = ideal."""
     if maximo is not None and atual > maximo:
         return -(atual - otimo) / otimo
@@ -42,7 +58,9 @@ def calcular_metricas(analise: SoilAnalysis) -> SoilMetrics:
     m = SoilMetrics()
 
     # Soma de Bases (SB)
-    bases = [v for v in [analise.calcio, analise.magnesio, analise.potassio] if v is not None]
+    bases = [
+        v for v in [analise.calcio, analise.magnesio, analise.potassio] if v is not None
+    ]
     if bases:
         m.soma_bases = round(sum(bases), 3)
 
@@ -52,7 +70,9 @@ def calcular_metricas(analise: SoilAnalysis) -> SoilMetrics:
         fator_acidez = max(0.05, (7.0 - analise.ph) / (analise.ph - 3.5))
         m.h_al_estimado = round(m.soma_bases * fator_acidez, 3)
         m.ctc = round(m.soma_bases + m.h_al_estimado, 3)
-        m.saturacao_bases = round((m.soma_bases / m.ctc) * 100, 1) if m.ctc > 0 else None
+        m.saturacao_bases = (
+            round((m.soma_bases / m.ctc) * 100, 1) if m.ctc > 0 else None
+        )
 
         # Necessidade de Calagem: NC = (V2 - V1) × CTC / (10 × PRNT)
         if m.saturacao_bases is not None and m.saturacao_bases < _V_ALVO:
@@ -63,17 +83,30 @@ def calcular_metricas(analise: SoilAnalysis) -> SoilMetrics:
 
     # Desvios normalizados por parâmetro
     if analise.ph is not None:
-        m.desvios["ph"] = round(_desvio_normalizado(analise.ph, _PH_MIN, _PH_OTM, _PH_MAX), 3)
+        m.desvios["ph"] = round(
+            _desvio_normalizado(analise.ph, _PH_MIN, _PH_OTM, _PH_MAX), 3
+        )
     if analise.materia_organica is not None:
-        m.desvios["materia_organica"] = round(_desvio_normalizado(analise.materia_organica, _MO_MIN, _MO_OTM), 3)
+        m.desvios["materia_organica"] = round(
+            _desvio_normalizado(analise.materia_organica, _MO_MIN, _MO_OTM), 3
+        )
     if analise.fosforo is not None:
-        m.desvios["fosforo"] = round(_desvio_normalizado(analise.fosforo, _P_MIN, _P_OTM), 3)
+        p_thr = _get_p_thresholds(analise.teor_argila)
+        m.desvios["fosforo"] = round(
+            _desvio_normalizado(analise.fosforo, p_thr["min"], p_thr["otimo"]), 3
+        )
     if analise.potassio is not None:
-        m.desvios["potassio"] = round(_desvio_normalizado(analise.potassio, _K_MIN, _K_OTM), 3)
+        m.desvios["potassio"] = round(
+            _desvio_normalizado(analise.potassio, _K_MIN, _K_OTM), 3
+        )
     if analise.calcio is not None:
-        m.desvios["calcio"] = round(_desvio_normalizado(analise.calcio, _CA_MIN, _CA_OTM), 3)
+        m.desvios["calcio"] = round(
+            _desvio_normalizado(analise.calcio, _CA_MIN, _CA_OTM), 3
+        )
     if analise.magnesio is not None:
-        m.desvios["magnesio"] = round(_desvio_normalizado(analise.magnesio, _MG_MIN, _MG_OTM), 3)
+        m.desvios["magnesio"] = round(
+            _desvio_normalizado(analise.magnesio, _MG_MIN, _MG_OTM), 3
+        )
 
     # Score de saúde do solo (100 = ideal, 0 = crítico)
     if m.desvios:
@@ -99,9 +132,10 @@ def _montar_contexto(analise: SoilAnalysis, m: SoilMetrics) -> dict:
             "desvio_normalizado": m.desvios.get("materia_organica"),
         }
     if analise.fosforo is not None:
+        p_thr = _get_p_thresholds(analise.teor_argila)
         ctx["parametros_medidos"]["fosforo_mg_dm3"] = {
             "valor": analise.fosforo,
-            "minimo_ideal": _P_MIN,
+            "minimo_ideal": p_thr["min"],
             "desvio_normalizado": m.desvios.get("fosforo"),
         }
     if analise.potassio is not None:
@@ -200,7 +234,9 @@ def gerar_recomendacoes(analise: SoilAnalysis) -> List[dict]:
         {
             "tipo": r["tipo"],
             "descricao": r["descricao"],
-            "prioridade": priority_map.get(r.get("prioridade", "media").lower(), PriorityLevel.MEDIA),
+            "prioridade": priority_map.get(
+                r.get("prioridade", "media").lower(), PriorityLevel.MEDIA
+            ),
         }
         for r in recomendacoes
     ]
