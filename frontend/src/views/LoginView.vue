@@ -67,34 +67,51 @@ async function handleLogin() {
 <style scoped>
 .auth-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  background: var(--color-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
 }
+
 .auth-card {
   background: var(--color-surface);
-  border-radius: 12px;
-  padding: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 40px 36px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-md);
 }
-.auth-brand { text-align: center; margin-bottom: 28px; }
+
+.auth-brand { text-align: center; margin-bottom: 32px; }
+
 .auth-logo {
-  width: 52px;
-  height: 52px;
-  background: var(--color-primary);
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
+  margin: 0 auto 14px;
 }
-.auth-logo svg { width: 28px; height: 28px; color: #fff; }
-.auth-brand h1 { font-size: 18px; font-weight: 700; color: var(--color-primary-dark); }
+.auth-logo svg { width: 24px; height: 24px; color: var(--color-primary); }
+
+.auth-brand h1 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
 .auth-brand p { font-size: 13px; color: var(--color-text-muted); margin-top: 4px; }
+
 .w-full { width: 100%; justify-content: center; }
-.auth-footer { text-align: center; margin-top: 20px; font-size: 13px; color: var(--color-text-muted); }
+
+.auth-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
 </style>

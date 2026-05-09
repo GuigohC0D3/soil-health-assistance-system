@@ -12,23 +12,48 @@
     <template v-else>
       <div class="grid-4" style="margin-bottom: 28px;">
         <div class="stat-card">
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
           <div class="stat-label">Propriedades</div>
           <div class="stat-value">{{ stats.properties }}</div>
           <div class="stat-hint">cadastradas</div>
         </div>
         <div class="stat-card">
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v11m0 0l3 3m-3-3l-3 3m12-14v11m0 0l3 3m-3-3l-3 3"/>
+            </svg>
+          </div>
           <div class="stat-label">Análises</div>
           <div class="stat-value">{{ stats.analyses }}</div>
           <div class="stat-hint">realizadas</div>
         </div>
         <div class="stat-card">
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
           <div class="stat-label">Recomendações</div>
           <div class="stat-value">{{ stats.recommendations }}</div>
           <div class="stat-hint">geradas</div>
         </div>
         <div class="stat-card">
+          <div class="stat-icon" :class="{ 'stat-icon--danger': stats.critical > 0 }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
           <div class="stat-label">Alertas Críticos</div>
-          <div class="stat-value" :style="{ color: stats.critical > 0 ? 'var(--color-danger)' : 'var(--color-primary)' }">
+          <div class="stat-value" :style="{ color: stats.critical > 0 ? 'var(--color-danger)' : 'var(--color-text)' }">
             {{ stats.critical }}
           </div>
           <div class="stat-hint">prioridade alta</div>
@@ -130,8 +155,32 @@ onMounted(async () => {
 <style scoped>
 .loading-text { color: var(--color-text-muted); padding: 24px 0; }
 
-.analysis-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-.analysis-item { padding: 10px 12px; background: #f8faf8; border-radius: 6px; border: 1px solid var(--color-border); }
+/* Stat icon */
+.stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.stat-icon--danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* Analysis list */
+.analysis-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.analysis-item {
+  padding: 10px 12px;
+  background: var(--color-surface-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
 .analysis-main { display: flex; justify-content: space-between; margin-bottom: 3px; }
 .analysis-id { font-weight: 600; font-size: 13px; }
 .analysis-date { font-size: 12px; color: var(--color-text-muted); }
@@ -140,7 +189,7 @@ onMounted(async () => {
 .score-row { display: flex; align-items: center; gap: 8px; }
 .score-bar-wrap {
   flex: 1;
-  height: 6px;
+  height: 5px;
   background: var(--color-border);
   border-radius: 99px;
   overflow: hidden;
@@ -152,9 +201,18 @@ onMounted(async () => {
 }
 .score-label { font-size: 11px; font-weight: 600; white-space: nowrap; }
 
-.rec-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-.rec-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f8faf8; border-radius: 6px; border: 1px solid var(--color-border); }
+/* Rec list */
+.rec-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.rec-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-surface-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
 .rec-tipo { font-size: 13px; font-weight: 500; }
 
-.card-link { font-size: 13px; color: var(--color-primary); font-weight: 500; display: block; margin-top: 8px; }
+.card-link { font-size: 13px; color: var(--color-primary); font-weight: 500; display: block; margin-top: 10px; }
 </style>
