@@ -1,14 +1,20 @@
+from fastapi import HTTPException
 from openai import OpenAI
 
 from app.config import settings
 from app.services.recommendation_service import SoilMetrics
 
+_LLM_TIMEOUT = 30.0
+
 
 def simular_calagem(
     m: SoilMetrics, dosagem_calcario: float, cultura: str, analise
 ) -> dict:
-    if not m.ctc or not m.saturacao_bases:
-        return {}
+    if m.ctc is None or m.saturacao_bases is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Dados insuficientes na análise para calcular a simulação (CTC ou saturação de bases ausentes).",
+        )
 
     prnt = 0.80
     delta_v = (dosagem_calcario * 10 * prnt * 100) / m.ctc
@@ -19,6 +25,7 @@ def simular_calagem(
     client = OpenAI(
         api_key=settings.LLM_API_KEY,
         base_url=settings.LLM_API_BASE,
+        timeout=_LLM_TIMEOUT,
     )
 
     prompt = (
@@ -30,17 +37,20 @@ def simular_calagem(
         f"Não especule além desses números. Responda em português."
     )
 
-    response = client.chat.completions.create(
-        model=settings.LLM_MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": "Você é um agrônomo especialista em solos do Cerrado brasileiro.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-    )
-    narrativa = response.choices[0].message.content.strip()
+    try:
+        response = client.chat.completions.create(
+            model=settings.LLM_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Você é um agrônomo especialista em solos do Cerrado brasileiro.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+        )
+        narrativa = response.choices[0].message.content.strip()
+    except Exception:
+        narrativa = None
 
     return {
         "antes": {

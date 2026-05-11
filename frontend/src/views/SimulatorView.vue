@@ -201,6 +201,7 @@ function onAnalysisChange() {
 function onCulturaChange() {
   result.value = null
   dosagem.value = 0
+  if (selectedAnalysisId.value && cultura.value) simulate()
 }
 
 async function simulate() {
@@ -217,8 +218,9 @@ async function simulate() {
     result.value = data
     vDelta.value = data.depois.v_pct_simulado - data.antes.v_pct
     phDelta.value = data.depois.ph_simulado - data.antes.ph_estimado
-  } catch {
-    error.value = 'Erro ao simular calagem.'
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { detail?: string } } }
+    error.value = err?.response?.data?.detail ?? 'Erro ao simular calagem.'
   } finally {
     loading.value = false
   }
@@ -227,7 +229,9 @@ async function simulate() {
 watch(dosagem, () => {
   if (!selectedAnalysisId.value || !cultura.value) return
   if (debounceTimer) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(simulate, 400)
+  debounceTimer = setTimeout(async () => {
+    if (!loading.value) await simulate()
+  }, 400)
 })
 
 onMounted(async () => {
