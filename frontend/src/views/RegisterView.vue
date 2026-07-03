@@ -84,7 +84,7 @@ async function handleRegister() {
 <style scoped>
 .auth-page {
   min-height: 100vh;
-  background: var(--color-bg);
+  background: linear-gradient(135deg, #efebe9 0%, #d7ccc8 100%);
   display: flex;
   align-items: center;
   justify-content: center;
